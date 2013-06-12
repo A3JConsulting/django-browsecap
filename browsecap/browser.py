@@ -2,10 +2,10 @@ from ConfigParser import SafeConfigParser as ConfigParser
 import re
 import os
 
-from django.core.cache import get_cache
+from django.core.cache import get_cache, DEFAULT_CACHE_ALIAS
 from django.conf import settings
 
-CACHE_NAME = getattr(settings, 'BROWSECAP_CACHE_NAME', 'default') # Get name of named cache to use, default to 'default'
+CACHE_ALIAS = getattr(settings, 'BROWSECAP_CACHE_ALIAS', DEFAULT_CACHE_ALIAS) # Get alias of cache to use, default to djangos default cache alias
 CACHE_KEY = getattr(settings, 'BROWSECAP_CACHE_KEY', 'browsecap') # Get cache key from settings, default to 'browsecap'
 CACHE_TIMEOUT = getattr(settings, 'BROWSECAP_CACHE_TIMEOUT', 60*60*2) # Get cache timeout from settings, default to 2 hours
 
@@ -21,7 +21,7 @@ class MobileBrowserParser(object):
     def __init__(self):
         self.mobile_cache = {}
         self.crawler_cache = {}
-        self.cache = get_cache(CACHE_NAME)
+        self.cache = get_cache(CACHE_ALIAS)
         self.parse()
 
     def parse(self):
