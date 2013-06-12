@@ -2,16 +2,18 @@ from ConfigParser import SafeConfigParser as ConfigParser
 import re
 import os
 
-from django.core.cache import cache
+from django.core.cache import get_cache
 from django.conf import settings
 
-CACHE_KEY = 'browsecap'
-CACHE_TIMEOUT = 60*60*2 # 2 hours
+CACHE_NAME = getattr(settings, 'BROWSECAP_CACHE_NAME', 'default') # Get name of named cache to use, default to 'default'
+CACHE_KEY = getattr(settings, 'BROWSECAP_CACHE_KEY', 'browsecap') # Get cache key from settings, default to 'browsecap'
+CACHE_TIMEOUT = getattr(settings, 'BROWSECAP_CACHE_TIMEOUT', 60*60*2) # Get cache timeout from settings, default to 2 hours
+
 DEFAULT_BC_PATH = os.path.abspath(os.path.dirname(__file__ or os.getcwd()))
 
 class MobileBrowserParser(object):
     def __new__(cls, *args, **kwargs):
-        # Only create one instance of this clas
+        # Only create one instance of this class
         if "instance" not in cls.__dict__:
             cls.instance = object.__new__(cls, *args, **kwargs)
         return cls.instance
@@ -19,11 +21,12 @@ class MobileBrowserParser(object):
     def __init__(self):
         self.mobile_cache = {}
         self.crawler_cache = {}
+        self.cache = get_cache(CACHE_NAME)
         self.parse()
 
     def parse(self):
         # try egtting the parsed definitions from cache
-        data = cache.get(CACHE_KEY)
+        data = self.cache.get(CACHE_KEY)
         if data:
             self.mobile_browsers = map(re.compile, data['mobile_browsers'])
             self.crawlers = map(re.compile, data['crawlers'])
@@ -76,7 +79,7 @@ class MobileBrowserParser(object):
                 self.crawlers.append(qname)
 
         # store in cache to speed up next load
-        cache.set(CACHE_KEY, {'mobile_browsers': self.mobile_browsers, 'crawlers': self.crawlers}, CACHE_TIMEOUT)
+        self.cache.set(CACHE_KEY, {'mobile_browsers': self.mobile_browsers, 'crawlers': self.crawlers}, CACHE_TIMEOUT)
 
         # compile regexps
         self.mobile_browsers = map(re.compile, self.mobile_browsers)
